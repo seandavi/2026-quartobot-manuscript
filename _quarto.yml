@@ -1,0 +1,23 @@
+project:
+  type: manuscript
+  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+
+manuscript:
+  article: index.qmd
+
+bibliography:
+  - references.bib
+  - references.json
+
+format:
+  html:
+    comments:
+      hypothesis: true
+  docx: default
+  jats: default
+
+  # (other formats)
+  # pdf: default
+
+execute:
+  freeze: true
