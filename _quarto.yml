@@ -1,13 +1,22 @@
 project:
   type: manuscript
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
+  # voice-samples/ contains PHI from past trainees' grant text. Two
+  # locks: the dir is named `_voice-samples/` (Quarto excludes
+  # underscore-prefixed dirs by default), AND an explicit negation
+  # below. Don't remove either without checking with the data owner.
+  render:
+    - "*.qmd"
+    - "*.md"
+    - "!_voice-samples/"
+    - "!voice-samples/"
 
 manuscript:
   article: index.qmd
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 
 format:
   html:

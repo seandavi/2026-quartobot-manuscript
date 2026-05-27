@@ -1,8 +1,22 @@
 # quartobot
 _book/
 _freeze/
+_manuscript/
 .quarto/
+references.resolved.bib
 references.json
 *_files/
 **/*.quarto_ipynb
+# Voice samples contain PHI — never commit. Underscore prefix is
+# what excludes them from Quarto's render; both names listed here
+# to stay defensive if the dir gets renamed back by mistake.
+_voice-samples/
 voice-samples/
+
+# Render outputs (regenerated each render).
+index.html
+index.docx
+index.xml
+index_files/
+
+/.quarto/
