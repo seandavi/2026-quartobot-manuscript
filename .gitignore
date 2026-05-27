@@ -1,0 +1,8 @@
+# quartobot
+_book/
+_freeze/
+.quarto/
+references.json
+*_files/
+**/*.quarto_ipynb
+voice-samples/
