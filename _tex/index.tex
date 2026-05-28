@@ -1,0 +1,712 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={quartobot: Quarto-native automation for citation resolution and reproducible publishing},
+  pdfkeywords={Quarto, manubot, manuscript-as-software, persistent
+identifiers, citation resolution, reproducible publishing, scholarly
+communication, CSL-JSON, MCP, pre-render hooks},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{quartobot: Quarto-native automation for citation resolution and
+reproducible publishing}
+\author{Sean Davis}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+TODO --- Sean's section. \textasciitilde250--300 words. Four moves:
+problem (manubot pattern, Quarto's broader publishing surface,
+pandoc-manubot-cite covers citation resolution but not the broader
+pattern); approach (pre-render hook architecture, committed
+\texttt{references.json} as a durable artifact, CLI + MCP + on-disk
+surfaces); results (wraps \texttt{citekey\_to\_csl\_item}, installable
+via \texttt{uv\ tool\ install}, validated on two production
+manuscripts); conclusion (extends manuscript-as- software along five
+dimensions while preserving manubot's resolver expertise). Full bullets
+in outline.md.
+\end{abstract}
+
+
+\section{Introduction}\label{introduction}
+
+\section{Implementation}\label{implementation}
+
+quartobot is structured as a single Python package exposing a small
+command-line interface. The integration with Quarto runs through a
+\texttt{project.pre-render:} hook in \texttt{\_quarto.yml}; the package
+is otherwise independent of Quarto and can be invoked directly. Citation
+resolution itself is delegated to manubot's
+\texttt{citekey\_to\_csl\_item} function, so the resolver chain
+(Crossref for DOI, NCBI E-utilities for PubMed and PMC, the arXiv API,
+Open Library for ISBN, the Wikidata API for Wikidata items) is the one
+already validated by eight years of manubot use.
+
+\subsection{Architecture and the choice of pre-render over
+filter}\label{architecture-and-the-choice-of-pre-render-over-filter}
+
+Quarto's documentation describes two principal customization surfaces:
+pre-render scripts, which run before pandoc parses the document, and Lua
+filters, which run on the parsed abstract syntax tree after the document
+engine executes. Citation \textbf{formatting} --- how a resolved
+reference appears once pandoc-citeproc has it in hand --- is a natural
+Lua-filter concern, and indeed pandoc-citeproc is itself implemented as
+a filter. Citation \textbf{resolution}, in contrast, must happen before
+the AST exists, because the bibliography is consumed at parse time. A
+Lua filter is therefore unable to add entries to the bibliography; by
+the time it runs, that file has already been read.
+
+quartobot lives on the pre-render side for this reason. The
+\texttt{resolve} subcommand scans Quarto sources (\texttt{.qmd},
+\texttt{.md}, and \texttt{.ipynb}) for citation keys of the form
+\texttt{@\textless{}prefix\textgreater{}:\textless{}identifier\textgreater{}},
+resolves each through \texttt{citekey\_to\_csl\_item}, and writes the
+resulting CSL-JSON to a file named \texttt{references.json}.
+Pandoc-citeproc then consumes that file as part of the normal render.
+The integration touches three things in a project: a single line under
+\texttt{project:} in \texttt{\_quarto.yml}, the generated
+\texttt{references.json}, and optionally a hand-curated
+\texttt{references.bib} for entries the resolver does not cover
+(textbooks, gray literature, software releases with no DOI).
+
+This choice differs from the existing path via the
+\texttt{pandoc-manubot-cite} filter, which provides the same resolver
+behavior as a pandoc filter and therefore runs during each pandoc
+invocation. The two approaches are not equivalent. A filter resolves at
+render time and produces no durable output. A pre-render hook resolves
+once, writes a file, commits it to the repository, and lets every
+subsequent render consume the cached bibliography without further
+network activity. For manuscripts rendered repeatedly --- by continuous
+integration, by per-pull-request preview, by per-commit permalink ---
+this difference becomes material. The bibliography becomes a versioned
+artifact in its own right.
+
+The trade-off favors pre-render when several of the following hold: the
+same manuscript is rendered repeatedly, authors want offline-capable
+renders, the bibliography is treated as a versioned artifact reviewed
+alongside the prose, and determinism matters more than always-fresh
+metadata. These are precisely the conditions under which the
+manuscript-as-software pattern operates. Pre-render is therefore the
+structurally correct architectural choice for the pattern;
+per-invocation filters remain a valid choice for one-off pandoc renders
+where the manuscript is not under continuous integration.
+
+\subsection{Supported identifiers}\label{supported-identifiers}
+
+Citation keys take the form
+\texttt{@\textless{}prefix\textgreater{}:\textless{}identifier\textgreater{}}
+in prose. The supported prefixes and their upstream resolvers are listed
+in Table 1.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Prefix & Identifier type & Upstream resolver \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{@doi:} & Digital Object Identifier & Crossref \\
+\texttt{@pmid:} & PubMed identifier & NCBI E-utilities \\
+\texttt{@pmc:} & PubMed Central identifier & NCBI E-utilities \\
+\texttt{@arxiv:} & arXiv identifier & arXiv API \\
+\texttt{@isbn:} & International Standard Book Number & Open Library \\
+\texttt{@wikidata:} & Wikidata QID & Wikidata API \\
+\texttt{@url:} & Web resource URL & URL metadata extraction \\
+\end{longtable}
+}
+
+Hand-curated entries continue to be supported through a project-level
+\texttt{references.bib}, which pandoc reads alongside the resolver
+output. The choice of which mechanism to use for a given citation is the
+author's; the two coexist in the same document. Reconciliation between
+the two sources is described below.
+
+\subsection{Input format coverage}\label{input-format-coverage}
+
+The pre-render scan is format-agnostic on the input side. Jupyter
+notebooks (\texttt{.ipynb}), Quarto Markdown (\texttt{.qmd}), and plain
+Markdown (\texttt{.md}) are all scanned in the same pass, because Quarto
+presents these formats through a uniform interface. This is the
+dimension manubot's bespoke toolchain did not reach: notebooks were
+never first-class manuscript inputs. The same \texttt{@doi:} syntax that
+resolves in prose resolves equally in a notebook narrative cell,
+allowing a literate-programming manuscript (analysis code, narrative,
+and citations in the same file) to use the manuscript-as-software
+pattern without modification.
+
+\subsection{Cross-platform deployment}\label{cross-platform-deployment}
+
+quartobot inherits Quarto's platform reach. The package runs on macOS,
+Linux, and Windows; the GitHub Actions workflows that ship with
+\texttt{quartobot\ use\ github-ci} (described below) use standard
+cross-platform actions. Manubot's bespoke toolchain assumed a
+Linux+Docker rendering environment; quartobot makes no such assumption.
+
+\subsection{CI scaffolding}\label{ci-scaffolding}
+
+The \texttt{use\ github-ci} subcommand lays down the
+continuous-integration scaffolding for the manuscript-as-software
+pattern. The default configuration produces three workflows. The first
+builds the manuscript on every push to the default branch, rendering to
+HTML, PDF, DOCX, and JATS XML, and publishes the result to GitHub Pages.
+The second builds a per-pull-request preview at a stable URL under
+\texttt{…/pr/\textless{}n\textgreater{}/}, posting a sticky comment with
+the preview link for reviewers who do not have a local Quarto
+installation. The third generates a versions index on \texttt{gh-pages}
+listing tagged releases and open pull-request previews.
+
+With the optional \texttt{-\/-with-versioned-snapshots} flag, each
+commit on the default branch also produces an immutable snapshot at
+\texttt{…/v/\textless{}sha\textgreater{}/}. This is the manubot
+per-commit permalink pattern, preserved exactly: a rendered manuscript
+on disk always knows which commit produced it, and a downloaded copy
+carries that provenance in the HTML.
+
+\subsection{Three surfaces for human and AI
+use}\label{three-surfaces-for-human-and-ai-use}
+
+quartobot exposes its resolution functionality through three surfaces,
+each appropriate for a different consumer.
+
+The \textbf{CLI} (\texttt{quartobot\ resolve}) is the primary interface
+and the one Quarto invokes through the pre-render hook. The same CLI is
+the surface AI authoring agents shell out to when drafting. An agent
+that has just written \texttt{@doi:10.1371/journal.pcbi.1007128} into
+prose can pass that identifier, or a batch of several dozen, to a single
+\texttt{quartobot\ resolve} call and receive the resolved CSL-JSON back.
+Two checks become cheap. First, the agent can confirm that every
+identifier resolved at all; an identifier that does not resolve is one
+the agent likely fabricated, and the citation can be removed or
+corrected before it reaches the manuscript. Second, the agent can
+compare the resolved metadata to what it intended (the work's title, the
+lead author's surname, the year of publication) and catch the case where
+the identifier resolves but does not name the paper the agent meant to
+cite. The pattern matches the broader recommendation in recent work on
+agent-tool efficiency to expose tools as code on a filesystem rather
+than as in-context schemas ({``Code Execution with {MCP:} Building More
+Efficient {AI} Agents \textbackslash{} {Anthropic},''} n.d.).
+
+The \textbf{MCP server} (\texttt{quartobot\ mcp}) is an optional
+stdio-based Model Context Protocol surface for the case where an IDE or
+agent framework already operates inside an MCP-aware environment and
+shelling out adds ergonomic friction. The server exposes the same
+resolver function as the CLI; results are identical.
+
+The \textbf{on-disk artifact} (\texttt{references.json}) is the surface
+that distinguishes quartobot most sharply from a filter-based approach.
+Once \texttt{resolve} has written the file and an author has committed
+it, the resolved citation graph is available to any downstream consumer
+without further network activity and without invoking pandoc. Citation
+linters can flag unused references, duplicate identifiers, or missing
+required fields. Bibliometric pipelines can ingest a manuscript's
+reference set as structured data. Other rendering toolchains can read
+the JSON directly. AI authoring agents drafting later prose can ground
+new claims against the manuscript's existing reference set, reading the
+committed file rather than re-querying the upstream APIs. This reuse is
+what \texttt{pandoc-manubot-cite} cannot offer: filter outputs are
+produced and consumed within a single pandoc invocation and are not
+available to anything else.
+
+A growing body of work documents the per-turn token cost of MCP servers
+in agent workflows, with multi-server deployments routinely consuming
+tens of thousands of tokens before useful work begins (Sadani and Kumar
+2026; {``MCP {Servers} {Use} 35x {More} {Tokens} {Than} {CLI} {Tools}
+--- {And} {Reliability} {Drops} to 72\% on {Hard} {Tasks}''} 2026).
+Anthropic's analysis recommends presenting tools as code on a filesystem
+and loading definitions on demand, reporting up to a 98.7\% reduction in
+context overhead under that pattern ({``Code Execution with {MCP:}
+Building More Efficient {AI} Agents \textbackslash{} {Anthropic},''}
+n.d.). quartobot's design predates this literature but lands on the same
+architecture: the CLI is the default surface, the MCP server is
+optional, and the on-disk artifact is the structurally efficient locus
+for downstream reuse.
+
+\subsection{Reconciliation of resolved and hand-curated
+entries}\label{reconciliation-of-resolved-and-hand-curated-entries}
+
+Real manuscripts mix resolver-generated and hand-curated citations. A
+\texttt{references.bib} may carry entries for textbooks, software
+releases, gray literature, or any work without a persistent identifier
+that the resolver covers. The \texttt{references.json} produced by
+\texttt{quartobot\ resolve} is regenerated on each pre-render pass.
+Without explicit handling, the two sources can collide on citation keys,
+especially as resolver-generated keys are derived from the identifier
+itself (e.g., \texttt{doi:10.1371/journal.pcbi.1007128}) and may overlap
+conceptually with hand-curated keys for the same work.
+
+The \texttt{reconcile} subcommand handles this case explicitly. Three
+modes are supported: \texttt{prefer-bib} keeps the hand-curated entry
+and discards the resolver's version; \texttt{prefer-resolved} keeps the
+resolver's entry and removes the hand-curated duplicate; and
+\texttt{fail-on-collision} halts with a diagnostic listing the
+conflicting keys for the author to resolve. All three modes operate with
+backup-then-mutate semantics: the original files are saved before any
+change, so a \texttt{reconcile} step is reversible.
+
+\section{Operation}\label{operation}
+
+\subsection{Installation}\label{installation}
+
+quartobot is distributed on PyPI and is installed as a standalone
+command-line tool using \texttt{uv}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ tool install quartobot}
+\end{Highlighting}
+\end{Shaded}
+
+The \texttt{uv\ tool\ install} form is recommended over
+\texttt{pip\ install} because it isolates quartobot in its own
+environment and places the resulting executable on the user's
+\texttt{PATH} without polluting any project's Python environment.
+quartobot requires Python 3.10 or later; no other system dependencies
+are required beyond an installed Quarto runtime.
+
+\subsection{Canonical workflow}\label{canonical-workflow}
+
+The shortest path from ``I want to write a manuscript'' to a working
+manuscript-as-software project is three commands:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{quarto}\NormalTok{ create project manuscript my{-}paper}
+\BuiltInTok{cd}\NormalTok{ my{-}paper}
+\ExtensionTok{quartobot}\NormalTok{ init}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{quarto\ create} scaffolds a default Quarto manuscript with an
+\texttt{index.qmd} source file, a placeholder \texttt{references.bib},
+and a \texttt{\_quarto.yml} project configuration.
+\texttt{quartobot\ init} then layers the citation pipeline on top: it
+adds the \texttt{pre-render:} line to \texttt{\_quarto.yml}, ensures
+\texttt{references.json} is listed in the \texttt{bibliography:} field,
+and appends the relevant entries to \texttt{.gitignore} for any
+transient files. The result is a Quarto project that resolves
+\texttt{@doi:}, \texttt{@pmid:}, and other persistent-identifier
+citation keys on every render.
+
+Authors then write prose as they would in any Quarto project, with
+citation keys pasted directly into the text:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{We follow @doi:10.1371/journal.pcbi.1007128, with the dataset described}
+\NormalTok{in @pmid:31479462 and methods inspired by @arxiv:2104.10729.}
+\end{Highlighting}
+\end{Shaded}
+
+A \texttt{quarto\ render} runs the pre-render hook automatically,
+produces an updated \texttt{references.json}, and proceeds with the
+normal multi-format render.
+
+To add the continuous-integration scaffolding described above, a single
+additional command is run from inside the project directory:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{quartobot}\NormalTok{ use github{-}ci}
+\end{Highlighting}
+\end{Shaded}
+
+The author commits the generated workflow files and pushes; the first
+push to GitHub initiates the render, publishes the result to GitHub
+Pages, and registers the pull-request preview pattern for subsequent
+contributions.
+
+\subsection{Alternative on-ramps}\label{alternative-on-ramps}
+
+The canonical workflow assumes a new project. Two alternative paths
+cover other starting points.
+
+For an \textbf{existing Quarto project} that already has prose and
+possibly a \texttt{references.bib}, \texttt{quartobot\ init} is run from
+inside the project root. It performs the same scaffolding steps and does
+not modify existing prose or bibliography entries. Authors can then
+begin adding \texttt{@doi:}-style keys incrementally without rewriting
+any existing citations.
+
+For the \textbf{resolver-only case} --- an author who wants citation
+resolution but has their own CI configuration and does not want
+quartobot to scaffold workflows --- \texttt{quartobot\ init} provides
+everything needed without \texttt{quartobot\ use\ github-ci}. The author
+wires the resolver into any existing pipeline by ensuring
+\texttt{quartobot\ resolve} runs before pandoc.
+
+\subsection{Command-line reference}\label{command-line-reference}
+
+The full CLI is summarized in Table 2. Each subcommand has detailed help
+available via
+\texttt{quartobot\ \textless{}subcommand\textgreater{}\ -\/-help}.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Subcommand
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{resolve} & Scan project sources for citation keys, resolve each
+via \texttt{citekey\_to\_csl\_item}, write CSL-JSON to
+\texttt{references.json}. Invoked by Quarto's pre-render hook; also
+directly callable. \\
+\texttt{init} & Scaffold the citation pipeline into a Quarto project.
+Idempotent. \\
+\texttt{use\ github-ci} & Layer GitHub Actions workflows for render,
+pull-request preview, and (optionally) per-commit permalinks. \\
+\texttt{scan} & Inventory citation keys across a project without
+resolving them. CI-lint surface. \\
+\texttt{validate} & Static checks on \texttt{\_quarto.yml} and the
+project layout. CI-lint surface. \\
+\texttt{reconcile} & Resolve collisions between \texttt{references.bib}
+and \texttt{references.json} with explicit modes (\texttt{prefer-bib},
+\texttt{prefer-resolved}, \texttt{fail-on-collision}). \\
+\texttt{versions} & Generate the \texttt{/versions/} index page on
+\texttt{gh-pages} listing tagged releases and open pull-request
+previews. \\
+\texttt{mcp} & Run a stdio Model Context Protocol server exposing the
+resolver for in-band use by AI authoring agents. \\
+\end{longtable}
+}
+
+\section{Use cases}\label{use-cases}
+
+\section{Discussion}\label{discussion}
+
+\section{Software availability}\label{software-availability}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Source repository:}
+  \href{https://github.com/seandavi/quartobot}{github.com/seandavi/quartobot}
+\item
+  \textbf{Package index:}
+  \href{https://pypi.org/project/quartobot/}{\texttt{quartobot} on PyPI}
+\item
+  \textbf{Documentation:}
+  \href{https://seandavi.github.io/quartobot/}{seandavi.github.io/quartobot}
+\item
+  \textbf{License:} MIT
+\item
+  \textbf{Archived release:} Zenodo DOI to be minted at submission.
+\item
+  \textbf{Latest version at submission:}
+\end{itemize}
+
+\section{Data availability}\label{data-availability}
+
+This article describes a software tool; no primary research data are
+generated. The two production case studies referenced in the Use Cases
+section have their own data availability statements in their respective
+publications. The reproducibility artifacts for those case studies ---
+the source \texttt{.qmd} files, the committed \texttt{references.json}
+bibliographies, the rendered outputs, and the GitHub Actions workflow
+history --- are publicly available in the repositories cited under each
+case study. The present manuscript is itself a quartobot project; its
+source, including the committed \texttt{references.json} produced by
+\texttt{quartobot\ resolve}, is available at .
+
+\section{Author contributions}\label{author-contributions}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Sean Davis} --- Conceptualization, Methodology, Software,
+  Investigation, Writing --- Original Draft, Writing --- Review \&
+  Editing, Project Administration.
+\end{itemize}
+
+\section{AI usage statement}\label{ai-usage-statement}
+
+Portions of this manuscript were drafted with the assistance of large
+language model coding agents (Anthropic Claude, operating through Claude
+Code) used as a literate-programming and drafting tool. AI assistance
+was used during outlining, prior-work surveying, structural drafting of
+the Implementation and Operation sections, and the development of the
+Discussion. All scientific claims, design decisions, citation choices,
+and final wording were reviewed and edited by the human authors.
+quartobot itself was developed by the human authors with AI assistance
+in implementation and documentation.
+
+\section{Funding}\label{funding}
+
+This work was supported by the National Cancer Institute under the NCI
+Information Technology for Cancer Research award U24CA289073 (NCI
+Bioconductor) and the University of Colorado Cancer Center Support Grant
+P30CA046934.
+
+\section{Acknowledgments}\label{acknowledgments}
+
+The authors thank the manubot project and its maintainers for eight
+years of resolver expertise embodied in \texttt{citekey\_to\_csl\_item},
+on which quartobot depends; the Quarto team at Posit for the Quarto
+Manuscripts project type that made this integration tractable; and early
+users of quartobot in the Bioconductor and CFDE communities whose
+feedback shaped the tool.
+
+\section{References}\label{references}
+
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{1}
+\bibitem[\citeproctext]{ref-url:https:ux2fux2fwww.anthropic.comux2fengineeringux2fcode-execution-with-mcp}
+{``Code Execution with {MCP:} Building More Efficient {AI} Agents
+\textbackslash{} {Anthropic}.''} n.d. Accessed May 28, 2026.
+\url{https://www.anthropic.com/engineering/code-execution-with-mcp}.
+
+\bibitem[\citeproctext]{ref-url:https:ux2fux2fwww.mindstudio.aiux2fblogux2fmcp-servers-35x-more-tokens-cli-tools-reliability-benchmark}
+{``MCP {Servers} {Use} 35x {More} {Tokens} {Than} {CLI} {Tools} ---
+{And} {Reliability} {Drops} to 72\% on {Hard} {Tasks}.''} 2026. May 9.
+\url{https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/}.
+
+\bibitem[\citeproctext]{ref-arxiv:2604.21816}
+Sadani, Anuj, and Deepak Kumar. 2026. \emph{Tool {Attention} {Is} {All}
+{You} {Need:} {Dynamic} {Tool} {Gating} and {Lazy} {Schema} {Loading}
+for {Eliminating} the {MCP/Tools} {Tax} in {Scalable} {Agentic}
+{Workflows}}. 2604.21816. arXiv. \url{https://arxiv.org/abs/2604.21816}.
+
+\end{CSLReferences}
+
+
+
+
+\end{document}

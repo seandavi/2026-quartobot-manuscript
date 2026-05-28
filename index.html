@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="keywords" content="Quarto, manubot, manuscript-as-software, persistent identifiers, citation resolution, reproducible publishing, scholarly communication, CSL-JSON, MCP, pre-render hooks">
+
+<title>quartobot: Quarto-native automation for citation resolution and reproducible publishing</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3b361995821cf61d77a5cf475430d514.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script async="" src="https://hypothes.is/embed.js"></script>
+<script>
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    document.body.classList.add('hypothesis-enabled');
+  });
+</script>
+
+
+<meta name="citation_title" content="quartobot: Quarto-native automation for citation resolution and reproducible publishing">
+<meta name="citation_abstract" content="TODO — Sean&amp;amp;#039;s section. ~250–300 words. Four moves: problem (manubot pattern,
+Quarto's broader publishing surface, pandoc-manubot-cite covers citation
+resolution but not the broader pattern); approach (pre-render hook architecture,
+committed `references.json` as a durable artifact, CLI + MCP + on-disk surfaces);
+results (wraps `citekey_to_csl_item`, installable via `uv tool install`,
+validated on two production manuscripts); conclusion (extends manuscript-as-
+software along five dimensions while preserving manubot's resolver expertise).
+Full bullets in outline.md.
+">
+<meta name="citation_keywords" content="Quarto,manubot,manuscript-as-software,persistent identifiers,citation resolution,reproducible publishing,scholarly communication,CSL-JSON,MCP,pre-render hooks">
+<meta name="citation_author" content="Sean Davis">
+<meta name="citation_language" content="en">
+<meta name="citation_reference" content="citation_title=Literate programming;,citation_author=Donald E. Knuth;,citation_publication_date=1984-05;,citation_cover_date=1984-05;,citation_year=1984;,citation_fulltext_html_url=https://doi.org/10.1093/comjnl/27.2.97;,citation_issue=2;,citation_doi=10.1093/comjnl/27.2.97;,citation_issn=0010-4620;,citation_volume=27;,citation_journal_title=Comput. J.;,citation_publisher=Oxford University Press, Inc.;">
+<meta name="citation_reference" content="citation_title=Tool Attention Is All You Need: Dynamic Tool Gating and Lazy Schema Loading for Eliminating the MCP/Tools Tax in Scalable Agentic Workflows;,citation_abstract=The Model Context Protocol (MCP) has become a common interface for connecting large language model (LLM) agents to external tools, but its reliance on stateless, eager schema injection imposes a hidden per-turn overhead the MCP Tax or Tools Tax that practitioner reports place between roughly 10k and 60k tokens in typical multi-server deployments. This payload inflates the key-value cache, is associated with reasoning degradation as context utilization approaches published fracture points around 70%, and turns token budgets into a recurring operational cost. We introduce Tool Attention, a middleware-layer mechanism that generalizes the “Attention Is All You Need” paradigm from self-attention over tokens to gated attention over tools. Tool Attention combines (i) an Intent Schema Overlap (ISO) score from sentence embeddings, (ii) a state-aware gating function enforcing preconditions and access scopes, and (iii) a two-phase lazy schema loader that keeps a compact summary pool in context and promotes full JSON schemas only for top-k gated tools. We evaluate on a simulated 120-tool, six-server benchmark whose per-server token counts are calibrated to public audits of real MCP deployments. In this simulation, Tool Attention directly reduces measured per-turn tool tokens by 95.0% (47.3k -&amp;amp;amp;gt; 2.4k) and raises effective context utilization (a token-ratio quantity) from 24% to 91%. End-to-end figures for task success, latency, cost, and reasoning quality are reported as projections derived from the measured token counts combined with published deployment telemetry; they are not measured on live LLM agents, and we mark projected values explicitly throughout. Taken together, the results support a simple thesis: protocol-level efficiency, not raw context length, is a binding constraint on scalable gentic systems. The code for this work is accessible at https://github.com/asadani/tool-attention;,citation_author=Anuj Sadani;,citation_author=Deepak Kumar;,citation_publication_date=2026-04-24;,citation_cover_date=2026-04-24;,citation_year=2026;,citation_fulltext_html_url=https://arxiv.org/abs/2604.21816;,citation_technical_report_institution=arXiv;,citation_technical_report_number=2604.21816;">
+<meta name="citation_reference" content="citation_title=Lifecycle-aware evaluation of biomedical data ecosystems;,citation_author=Ethan M. Lange;,citation_author=Vikram Adithya Ganesh;,citation_author=Adriana Ivich;,citation_author=Vince Rubinetti;,citation_author=Casey Greene;,citation_author=Sean Davis;,citation_publication_date=2026-05-20;,citation_cover_date=2026-05-20;,citation_year=2026;,citation_fulltext_html_url=https://doi.org/hb5qtz;,citation_doi=10.5281/zenodo.20314128;,citation_language=en;,citation_publisher=Zenodo;">
+<meta name="citation_reference" content="citation_title=Code execution with MCP: Building more efficient AI agents \ Anthropic;,citation_fulltext_html_url=https://www.anthropic.com/engineering/code-execution-with-mcp;">
+<meta name="citation_reference" content="citation_title=MCP Servers Use 35x More Tokens Than CLI Tools — And Reliability Drops to 72% on Hard Tasks;,citation_abstract=A direct benchmark shows MCP uses 35x more tokens than CLI on the same task, with reliability falling from 100% to 72% as complexity grows. Use CLIs instead.;,citation_publication_date=2026-05-09;,citation_cover_date=2026-05-09;,citation_year=2026;,citation_fulltext_html_url=https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/;,citation_language=en;">
+</head>
+
+<body class="quarto-light">
+
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">quartobot: Quarto-native automation for citation resolution and reproducible publishing</h1>
+          </div>
+
+    
+    <div class="quarto-title-meta-container">
+      <div class="quarto-title-meta-column-start">
+            <div class="quarto-title-meta-author">
+          <div class="quarto-title-meta-heading">Author</div>
+          <div class="quarto-title-meta-heading">Affiliation</div>
+          
+                <div class="quarto-title-meta-contents">
+            <p class="author">Sean Davis <a href="mailto:seandavi@gmail.com" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0000-0002-8991-6458" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+          </div>
+                <div class="quarto-title-meta-contents">
+                    <p class="affiliation">
+                        University of Colorado Anschutz School of Medicine
+                      </p>
+                  </div>
+                    </div>
+        
+        <div class="quarto-title-meta">
+
+                      
+          
+                
+              </div>
+      </div>
+      <div class="quarto-title-meta-column-end quarto-other-formats-target">
+      <div class="quarto-alternate-formats"><div class="quarto-title-meta-heading">Other Formats</div><div class="quarto-title-meta-contents"><p><a href="index.docx"><i class="bi bi-file-word"></i>MS Word</a></p></div><div class="quarto-title-meta-contents"><p><a href="index.pdf"><i class="bi bi-file-pdf"></i>PDF</a></p></div><div class="quarto-title-meta-contents"><p><a href="index-meca.zip" data-meca-link="true"><i class="bi bi-archive"></i>MECA Bundle</a></p></div></div></div>
+    </div>
+
+    <div>
+      <div class="abstract">
+        <div class="block-title">Abstract</div>
+        <p>TODO — Sean’s section. ~250–300 words. Four moves: problem (manubot pattern, Quarto’s broader publishing surface, pandoc-manubot-cite covers citation resolution but not the broader pattern); approach (pre-render hook architecture, committed <code>references.json</code> as a durable artifact, CLI + MCP + on-disk surfaces); results (wraps <code>citekey_to_csl_item</code>, installable via <code>uv tool install</code>, validated on two production manuscripts); conclusion (extends manuscript-as- software along five dimensions while preserving manubot’s resolver expertise). Full bullets in outline.md.</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="keywords">
+        <div class="block-title">Keywords</div>
+        <p>Quarto, manubot, manuscript-as-software, persistent identifiers, citation resolution, reproducible publishing, scholarly communication, CSL-JSON, MCP, pre-render hooks</p>
+      </div>
+    </div>
+
+    <div class="quarto-other-links-text-target">
+    </div>  </div>
+</header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#implementation" id="toc-implementation" class="nav-link" data-scroll-target="#implementation">Implementation</a>
+  <ul class="collapse">
+  <li><a href="#architecture-and-the-choice-of-pre-render-over-filter" id="toc-architecture-and-the-choice-of-pre-render-over-filter" class="nav-link" data-scroll-target="#architecture-and-the-choice-of-pre-render-over-filter">Architecture and the choice of pre-render over filter</a></li>
+  <li><a href="#supported-identifiers" id="toc-supported-identifiers" class="nav-link" data-scroll-target="#supported-identifiers">Supported identifiers</a></li>
+  <li><a href="#input-format-coverage" id="toc-input-format-coverage" class="nav-link" data-scroll-target="#input-format-coverage">Input format coverage</a></li>
+  <li><a href="#cross-platform-deployment" id="toc-cross-platform-deployment" class="nav-link" data-scroll-target="#cross-platform-deployment">Cross-platform deployment</a></li>
+  <li><a href="#ci-scaffolding" id="toc-ci-scaffolding" class="nav-link" data-scroll-target="#ci-scaffolding">CI scaffolding</a></li>
+  <li><a href="#three-surfaces-for-human-and-ai-use" id="toc-three-surfaces-for-human-and-ai-use" class="nav-link" data-scroll-target="#three-surfaces-for-human-and-ai-use">Three surfaces for human and AI use</a></li>
+  <li><a href="#reconciliation-of-resolved-and-hand-curated-entries" id="toc-reconciliation-of-resolved-and-hand-curated-entries" class="nav-link" data-scroll-target="#reconciliation-of-resolved-and-hand-curated-entries">Reconciliation of resolved and hand-curated entries</a></li>
+  </ul></li>
+  <li><a href="#operation" id="toc-operation" class="nav-link" data-scroll-target="#operation">Operation</a>
+  <ul class="collapse">
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a></li>
+  <li><a href="#canonical-workflow" id="toc-canonical-workflow" class="nav-link" data-scroll-target="#canonical-workflow">Canonical workflow</a></li>
+  <li><a href="#alternative-on-ramps" id="toc-alternative-on-ramps" class="nav-link" data-scroll-target="#alternative-on-ramps">Alternative on-ramps</a></li>
+  <li><a href="#command-line-reference" id="toc-command-line-reference" class="nav-link" data-scroll-target="#command-line-reference">Command-line reference</a></li>
+  </ul></li>
+  <li><a href="#use-cases" id="toc-use-cases" class="nav-link" data-scroll-target="#use-cases">Use cases</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  <li><a href="#software-availability" id="toc-software-availability" class="nav-link" data-scroll-target="#software-availability">Software availability</a></li>
+  <li><a href="#data-availability" id="toc-data-availability" class="nav-link" data-scroll-target="#data-availability">Data availability</a></li>
+  <li><a href="#author-contributions" id="toc-author-contributions" class="nav-link" data-scroll-target="#author-contributions">Author contributions</a></li>
+  <li><a href="#ai-usage-statement" id="toc-ai-usage-statement" class="nav-link" data-scroll-target="#ai-usage-statement">AI usage statement</a></li>
+  <li><a href="#funding" id="toc-funding" class="nav-link" data-scroll-target="#funding">Funding</a></li>
+  <li><a href="#acknowledgments" id="toc-acknowledgments" class="nav-link" data-scroll-target="#acknowledgments">Acknowledgments</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+  
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<!-- TODO Sean — §1, ~800–900 words. Spine in outline.md §1:
+     manubot pattern → manubot's existing Quarto reach via pandoc-manubot-cite
+     → Quarto ecosystem shift → three things pandoc-manubot-cite doesn't provide
+     (pre-render architecture + scaffolding + reusable citation graph)
+     → five dimensions of extension → roadmap. Lead with honest acknowledgment
+     of pandoc-manubot-cite as prior art. See voice samples for register. -->
+</section>
+<section id="implementation" class="level1">
+<h1>Implementation</h1>
+<p>quartobot is structured as a single Python package exposing a small command-line interface. The integration with Quarto runs through a <code>project.pre-render:</code> hook in <code>_quarto.yml</code>; the package is otherwise independent of Quarto and can be invoked directly. Citation resolution itself is delegated to manubot’s <code>citekey_to_csl_item</code> function, so the resolver chain (Crossref for DOI, NCBI E-utilities for PubMed and PMC, the arXiv API, Open Library for ISBN, the Wikidata API for Wikidata items) is the one already validated by eight years of manubot use.</p>
+<section id="architecture-and-the-choice-of-pre-render-over-filter" class="level2">
+<h2 class="anchored" data-anchor-id="architecture-and-the-choice-of-pre-render-over-filter">Architecture and the choice of pre-render over filter</h2>
+<p>Quarto’s documentation describes two principal customization surfaces: pre-render scripts, which run before pandoc parses the document, and Lua filters, which run on the parsed abstract syntax tree after the document engine executes. Citation <strong>formatting</strong> — how a resolved reference appears once pandoc-citeproc has it in hand — is a natural Lua-filter concern, and indeed pandoc-citeproc is itself implemented as a filter. Citation <strong>resolution</strong>, in contrast, must happen before the AST exists, because the bibliography is consumed at parse time. A Lua filter is therefore unable to add entries to the bibliography; by the time it runs, that file has already been read.</p>
+<p>quartobot lives on the pre-render side for this reason. The <code>resolve</code> subcommand scans Quarto sources (<code>.qmd</code>, <code>.md</code>, and <code>.ipynb</code>) for citation keys of the form <code>@&lt;prefix&gt;:&lt;identifier&gt;</code>, resolves each through <code>citekey_to_csl_item</code>, and writes the resulting CSL-JSON to a file named <code>references.json</code>. Pandoc-citeproc then consumes that file as part of the normal render. The integration touches three things in a project: a single line under <code>project:</code> in <code>_quarto.yml</code>, the generated <code>references.json</code>, and optionally a hand-curated <code>references.bib</code> for entries the resolver does not cover (textbooks, gray literature, software releases with no DOI).</p>
+<p>This choice differs from the existing path via the <code>pandoc-manubot-cite</code> filter, which provides the same resolver behavior as a pandoc filter and therefore runs during each pandoc invocation. The two approaches are not equivalent. A filter resolves at render time and produces no durable output. A pre-render hook resolves once, writes a file, commits it to the repository, and lets every subsequent render consume the cached bibliography without further network activity. For manuscripts rendered repeatedly — by continuous integration, by per-pull-request preview, by per-commit permalink — this difference becomes material. The bibliography becomes a versioned artifact in its own right.</p>
+<p>The trade-off favors pre-render when several of the following hold: the same manuscript is rendered repeatedly, authors want offline-capable renders, the bibliography is treated as a versioned artifact reviewed alongside the prose, and determinism matters more than always-fresh metadata. These are precisely the conditions under which the manuscript-as-software pattern operates. Pre-render is therefore the structurally correct architectural choice for the pattern; per-invocation filters remain a valid choice for one-off pandoc renders where the manuscript is not under continuous integration.</p>
+</section>
+<section id="supported-identifiers" class="level2">
+<h2 class="anchored" data-anchor-id="supported-identifiers">Supported identifiers</h2>
+<p>Citation keys take the form <code>@&lt;prefix&gt;:&lt;identifier&gt;</code> in prose. The supported prefixes and their upstream resolvers are listed in Table 1.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Prefix</th>
+<th>Identifier type</th>
+<th>Upstream resolver</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>@doi:</code></td>
+<td>Digital Object Identifier</td>
+<td>Crossref</td>
+</tr>
+<tr class="even">
+<td><code>@pmid:</code></td>
+<td>PubMed identifier</td>
+<td>NCBI E-utilities</td>
+</tr>
+<tr class="odd">
+<td><code>@pmc:</code></td>
+<td>PubMed Central identifier</td>
+<td>NCBI E-utilities</td>
+</tr>
+<tr class="even">
+<td><code>@arxiv:</code></td>
+<td>arXiv identifier</td>
+<td>arXiv API</td>
+</tr>
+<tr class="odd">
+<td><code>@isbn:</code></td>
+<td>International Standard Book Number</td>
+<td>Open Library</td>
+</tr>
+<tr class="even">
+<td><code>@wikidata:</code></td>
+<td>Wikidata QID</td>
+<td>Wikidata API</td>
+</tr>
+<tr class="odd">
+<td><code>@url:</code></td>
+<td>Web resource URL</td>
+<td>URL metadata extraction</td>
+</tr>
+</tbody>
+</table>
+<p>Hand-curated entries continue to be supported through a project-level <code>references.bib</code>, which pandoc reads alongside the resolver output. The choice of which mechanism to use for a given citation is the author’s; the two coexist in the same document. Reconciliation between the two sources is described below.</p>
+</section>
+<section id="input-format-coverage" class="level2">
+<h2 class="anchored" data-anchor-id="input-format-coverage">Input format coverage</h2>
+<p>The pre-render scan is format-agnostic on the input side. Jupyter notebooks (<code>.ipynb</code>), Quarto Markdown (<code>.qmd</code>), and plain Markdown (<code>.md</code>) are all scanned in the same pass, because Quarto presents these formats through a uniform interface. This is the dimension manubot’s bespoke toolchain did not reach: notebooks were never first-class manuscript inputs. The same <code>@doi:</code> syntax that resolves in prose resolves equally in a notebook narrative cell, allowing a literate-programming manuscript (analysis code, narrative, and citations in the same file) to use the manuscript-as-software pattern without modification.</p>
+</section>
+<section id="cross-platform-deployment" class="level2">
+<h2 class="anchored" data-anchor-id="cross-platform-deployment">Cross-platform deployment</h2>
+<p>quartobot inherits Quarto’s platform reach. The package runs on macOS, Linux, and Windows; the GitHub Actions workflows that ship with <code>quartobot use github-ci</code> (described below) use standard cross-platform actions. Manubot’s bespoke toolchain assumed a Linux+Docker rendering environment; quartobot makes no such assumption.</p>
+</section>
+<section id="ci-scaffolding" class="level2">
+<h2 class="anchored" data-anchor-id="ci-scaffolding">CI scaffolding</h2>
+<p>The <code>use github-ci</code> subcommand lays down the continuous-integration scaffolding for the manuscript-as-software pattern. The default configuration produces three workflows. The first builds the manuscript on every push to the default branch, rendering to HTML, PDF, DOCX, and JATS XML, and publishes the result to GitHub Pages. The second builds a per-pull-request preview at a stable URL under <code>…/pr/&lt;n&gt;/</code>, posting a sticky comment with the preview link for reviewers who do not have a local Quarto installation. The third generates a versions index on <code>gh-pages</code> listing tagged releases and open pull-request previews.</p>
+<p>With the optional <code>--with-versioned-snapshots</code> flag, each commit on the default branch also produces an immutable snapshot at <code>…/v/&lt;sha&gt;/</code>. This is the manubot per-commit permalink pattern, preserved exactly: a rendered manuscript on disk always knows which commit produced it, and a downloaded copy carries that provenance in the HTML.</p>
+</section>
+<section id="three-surfaces-for-human-and-ai-use" class="level2">
+<h2 class="anchored" data-anchor-id="three-surfaces-for-human-and-ai-use">Three surfaces for human and AI use</h2>
+<p>quartobot exposes its resolution functionality through three surfaces, each appropriate for a different consumer.</p>
+<p>The <strong>CLI</strong> (<code>quartobot resolve</code>) is the primary interface and the one Quarto invokes through the pre-render hook. The same CLI is the surface AI authoring agents shell out to when drafting. An agent that has just written <code>@doi:10.1371/journal.pcbi.1007128</code> into prose can pass that identifier, or a batch of several dozen, to a single <code>quartobot resolve</code> call and receive the resolved CSL-JSON back. Two checks become cheap. First, the agent can confirm that every identifier resolved at all; an identifier that does not resolve is one the agent likely fabricated, and the citation can be removed or corrected before it reaches the manuscript. Second, the agent can compare the resolved metadata to what it intended (the work’s title, the lead author’s surname, the year of publication) and catch the case where the identifier resolves but does not name the paper the agent meant to cite. The pattern matches the broader recommendation in recent work on agent-tool efficiency to expose tools as code on a filesystem rather than as in-context schemas <span class="citation" data-cites="url:https://www.anthropic.com/engineering/code-execution-with-mcp">(<a href="#ref-url:https://www.anthropic.com/engineering/code-execution-with-mcp" role="doc-biblioref"><span>“Code Execution with <span>MCP:</span> Building More Efficient <span>AI</span> Agents \ <span>Anthropic</span>,”</span> n.d.</a>)</span>.</p>
+<p>The <strong>MCP server</strong> (<code>quartobot mcp</code>) is an optional stdio-based Model Context Protocol surface for the case where an IDE or agent framework already operates inside an MCP-aware environment and shelling out adds ergonomic friction. The server exposes the same resolver function as the CLI; results are identical.</p>
+<p>The <strong>on-disk artifact</strong> (<code>references.json</code>) is the surface that distinguishes quartobot most sharply from a filter-based approach. Once <code>resolve</code> has written the file and an author has committed it, the resolved citation graph is available to any downstream consumer without further network activity and without invoking pandoc. Citation linters can flag unused references, duplicate identifiers, or missing required fields. Bibliometric pipelines can ingest a manuscript’s reference set as structured data. Other rendering toolchains can read the JSON directly. AI authoring agents drafting later prose can ground new claims against the manuscript’s existing reference set, reading the committed file rather than re-querying the upstream APIs. This reuse is what <code>pandoc-manubot-cite</code> cannot offer: filter outputs are produced and consumed within a single pandoc invocation and are not available to anything else.</p>
+<p>A growing body of work documents the per-turn token cost of MCP servers in agent workflows, with multi-server deployments routinely consuming tens of thousands of tokens before useful work begins <span class="citation" data-cites="arxiv:2604.21816 url:https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark">(<a href="#ref-arxiv:2604.21816" role="doc-biblioref">Sadani and Kumar 2026</a>; <a href="#ref-url:https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark" role="doc-biblioref"><span>“MCP <span>Servers</span> <span>Use</span> 35x <span>More</span> <span>Tokens</span> <span>Than</span> <span>CLI</span> <span>Tools</span> — <span>And</span> <span>Reliability</span> <span>Drops</span> to 72% on <span>Hard</span> <span>Tasks</span>”</span> 2026</a>)</span>. Anthropic’s analysis recommends presenting tools as code on a filesystem and loading definitions on demand, reporting up to a 98.7% reduction in context overhead under that pattern <span class="citation" data-cites="url:https://www.anthropic.com/engineering/code-execution-with-mcp">(<a href="#ref-url:https://www.anthropic.com/engineering/code-execution-with-mcp" role="doc-biblioref"><span>“Code Execution with <span>MCP:</span> Building More Efficient <span>AI</span> Agents \ <span>Anthropic</span>,”</span> n.d.</a>)</span>. quartobot’s design predates this literature but lands on the same architecture: the CLI is the default surface, the MCP server is optional, and the on-disk artifact is the structurally efficient locus for downstream reuse.</p>
+</section>
+<section id="reconciliation-of-resolved-and-hand-curated-entries" class="level2">
+<h2 class="anchored" data-anchor-id="reconciliation-of-resolved-and-hand-curated-entries">Reconciliation of resolved and hand-curated entries</h2>
+<p>Real manuscripts mix resolver-generated and hand-curated citations. A <code>references.bib</code> may carry entries for textbooks, software releases, gray literature, or any work without a persistent identifier that the resolver covers. The <code>references.json</code> produced by <code>quartobot resolve</code> is regenerated on each pre-render pass. Without explicit handling, the two sources can collide on citation keys, especially as resolver-generated keys are derived from the identifier itself (e.g., <code>doi:10.1371/journal.pcbi.1007128</code>) and may overlap conceptually with hand-curated keys for the same work.</p>
+<p>The <code>reconcile</code> subcommand handles this case explicitly. Three modes are supported: <code>prefer-bib</code> keeps the hand-curated entry and discards the resolver’s version; <code>prefer-resolved</code> keeps the resolver’s entry and removes the hand-curated duplicate; and <code>fail-on-collision</code> halts with a diagnostic listing the conflicting keys for the author to resolve. All three modes operate with backup-then-mutate semantics: the original files are saved before any change, so a <code>reconcile</code> step is reversible.</p>
+</section>
+</section>
+<section id="operation" class="level1">
+<h1>Operation</h1>
+<section id="installation" class="level2">
+<h2 class="anchored" data-anchor-id="installation">Installation</h2>
+<p>quartobot is distributed on PyPI and is installed as a standalone command-line tool using <code>uv</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> tool install quartobot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>uv tool install</code> form is recommended over <code>pip install</code> because it isolates quartobot in its own environment and places the resulting executable on the user’s <code>PATH</code> without polluting any project’s Python environment. quartobot requires Python 3.10 or later; no other system dependencies are required beyond an installed Quarto runtime.</p>
+</section>
+<section id="canonical-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="canonical-workflow">Canonical workflow</h2>
+<p>The shortest path from “I want to write a manuscript” to a working manuscript-as-software project is three commands:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> create project manuscript my-paper</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-paper</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">quartobot</span> init</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>quarto create</code> scaffolds a default Quarto manuscript with an <code>index.qmd</code> source file, a placeholder <code>references.bib</code>, and a <code>_quarto.yml</code> project configuration. <code>quartobot init</code> then layers the citation pipeline on top: it adds the <code>pre-render:</code> line to <code>_quarto.yml</code>, ensures <code>references.json</code> is listed in the <code>bibliography:</code> field, and appends the relevant entries to <code>.gitignore</code> for any transient files. The result is a Quarto project that resolves <code>@doi:</code>, <code>@pmid:</code>, and other persistent-identifier citation keys on every render.</p>
+<p>Authors then write prose as they would in any Quarto project, with citation keys pasted directly into the text:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>We follow @doi:10.1371/journal.pcbi.1007128, with the dataset described</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>in @pmid:31479462 and methods inspired by @arxiv:2104.10729.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A <code>quarto render</code> runs the pre-render hook automatically, produces an updated <code>references.json</code>, and proceeds with the normal multi-format render.</p>
+<p>To add the continuous-integration scaffolding described above, a single additional command is run from inside the project directory:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quartobot</span> use github-ci</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The author commits the generated workflow files and pushes; the first push to GitHub initiates the render, publishes the result to GitHub Pages, and registers the pull-request preview pattern for subsequent contributions.</p>
+</section>
+<section id="alternative-on-ramps" class="level2">
+<h2 class="anchored" data-anchor-id="alternative-on-ramps">Alternative on-ramps</h2>
+<p>The canonical workflow assumes a new project. Two alternative paths cover other starting points.</p>
+<p>For an <strong>existing Quarto project</strong> that already has prose and possibly a <code>references.bib</code>, <code>quartobot init</code> is run from inside the project root. It performs the same scaffolding steps and does not modify existing prose or bibliography entries. Authors can then begin adding <code>@doi:</code>-style keys incrementally without rewriting any existing citations.</p>
+<p>For the <strong>resolver-only case</strong> — an author who wants citation resolution but has their own CI configuration and does not want quartobot to scaffold workflows — <code>quartobot init</code> provides everything needed without <code>quartobot use github-ci</code>. The author wires the resolver into any existing pipeline by ensuring <code>quartobot resolve</code> runs before pandoc.</p>
+</section>
+<section id="command-line-reference" class="level2">
+<h2 class="anchored" data-anchor-id="command-line-reference">Command-line reference</h2>
+<p>The full CLI is summarized in Table 2. Each subcommand has detailed help available via <code>quartobot &lt;subcommand&gt; --help</code>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Subcommand</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>resolve</code></td>
+<td>Scan project sources for citation keys, resolve each via <code>citekey_to_csl_item</code>, write CSL-JSON to <code>references.json</code>. Invoked by Quarto’s pre-render hook; also directly callable.</td>
+</tr>
+<tr class="even">
+<td><code>init</code></td>
+<td>Scaffold the citation pipeline into a Quarto project. Idempotent.</td>
+</tr>
+<tr class="odd">
+<td><code>use github-ci</code></td>
+<td>Layer GitHub Actions workflows for render, pull-request preview, and (optionally) per-commit permalinks.</td>
+</tr>
+<tr class="even">
+<td><code>scan</code></td>
+<td>Inventory citation keys across a project without resolving them. CI-lint surface.</td>
+</tr>
+<tr class="odd">
+<td><code>validate</code></td>
+<td>Static checks on <code>_quarto.yml</code> and the project layout. CI-lint surface.</td>
+</tr>
+<tr class="even">
+<td><code>reconcile</code></td>
+<td>Resolve collisions between <code>references.bib</code> and <code>references.json</code> with explicit modes (<code>prefer-bib</code>, <code>prefer-resolved</code>, <code>fail-on-collision</code>).</td>
+</tr>
+<tr class="odd">
+<td><code>versions</code></td>
+<td>Generate the <code>/versions/</code> index page on <code>gh-pages</code> listing tagged releases and open pull-request previews.</td>
+</tr>
+<tr class="even">
+<td><code>mcp</code></td>
+<td>Run a stdio Model Context Protocol server exposing the resolver for in-band use by AI authoring agents.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="use-cases" class="level1">
+<h1>Use cases</h1>
+<!-- TODO Sean — §4, ~600–700 words across two or three case studies.
+     Case 1: CFDE Metrics paper (submitted Cell Trends Open 2026-05-20,
+     Zenodo @doi:10.5281/zenodo.20314128). Case 2: Venice spatial-hackathon
+     manuscript (TeX bundle delivered to Davide 2026-05-27 for arXiv).
+     Case 3 (optional but recommended): this paper itself, rendered with
+     quartobot. See outline.md §4 for the bullets. -->
+</section>
+<section id="discussion" class="level1">
+<h1>Discussion</h1>
+<!-- TODO Sean — §5, ~400–500 words. Limitations (manubot dependency,
+     network requirement at resolution time but not at render time, CSL-JSON
+     output only). Future work (Quarto books and courseware as the next
+     frontiers, citation linting in CI, richer agent tooling). Why this
+     matters beyond the tool (automation as through-line, AI-assisted writing
+     accelerating the case for text-first publishing, version control as
+     attribution substrate). See outline.md §5. -->
+</section>
+<section id="software-availability" class="level1">
+<h1>Software availability</h1>
+<ul>
+<li><strong>Source repository:</strong> <a href="https://github.com/seandavi/quartobot">github.com/seandavi/quartobot</a></li>
+<li><strong>Package index:</strong> <a href="https://pypi.org/project/quartobot/"><code>quartobot</code> on PyPI</a></li>
+<li><strong>Documentation:</strong> <a href="https://seandavi.github.io/quartobot/">seandavi.github.io/quartobot</a></li>
+<li><strong>License:</strong> MIT</li>
+<li><strong>Archived release:</strong> Zenodo DOI to be minted at submission. <!-- TODO Sean —
+enable the GitHub–Zenodo integration on the repo (if not already), cut a
+tagged release at v1.0 or v0.4 (decision deferred from outline.md open
+decisions), and add the Zenodo DOI here before submission. --></li>
+<li><strong>Latest version at submission:</strong> <!-- TODO Sean — fill in at submission time. --></li>
+</ul>
+</section>
+<section id="data-availability" class="level1">
+<h1>Data availability</h1>
+<p>This article describes a software tool; no primary research data are generated. The two production case studies referenced in the Use Cases section have their own data availability statements in their respective publications. The reproducibility artifacts for those case studies — the source <code>.qmd</code> files, the committed <code>references.json</code> bibliographies, the rendered outputs, and the GitHub Actions workflow history — are publicly available in the repositories cited under each case study. The present manuscript is itself a quartobot project; its source, including the committed <code>references.json</code> produced by <code>quartobot resolve</code>, is available at <!-- TODO Sean — fill in repo URL once the GitHub remote is cut. -->.</p>
+</section>
+<section id="author-contributions" class="level1">
+<h1>Author contributions</h1>
+<!-- TODO Sean — confirm and complete per CRediT taxonomy. Initial draft below;
+     update as co-authors are added (Daniel Himmelstein, Anthony Gitter, others). -->
+<ul>
+<li><strong>Sean Davis</strong> — Conceptualization, Methodology, Software, Investigation, Writing — Original Draft, Writing — Review &amp; Editing, Project Administration.</li>
+</ul>
+</section>
+<section id="ai-usage-statement" class="level1">
+<h1>AI usage statement</h1>
+<!-- TODO Sean — final wording for the AI usage disclosure. Suggested
+     starting point that you can rewrite in your voice: -->
+<p>Portions of this manuscript were drafted with the assistance of large language model coding agents (Anthropic Claude, operating through Claude Code) used as a literate-programming and drafting tool. AI assistance was used during outlining, prior-work surveying, structural drafting of the Implementation and Operation sections, and the development of the Discussion. All scientific claims, design decisions, citation choices, and final wording were reviewed and edited by the human authors. quartobot itself was developed by the human authors with AI assistance in implementation and documentation.</p>
+</section>
+<section id="funding" class="level1">
+<h1>Funding</h1>
+<p>This work was supported by the National Cancer Institute under the NCI Information Technology for Cancer Research award U24CA289073 (NCI Bioconductor) and the University of Colorado Cancer Center Support Grant P30CA046934.</p>
+</section>
+<section id="acknowledgments" class="level1">
+<h1>Acknowledgments</h1>
+<!-- TODO Sean — drop in the right names at submission time. Suggested
+     starting point: -->
+<p>The authors thank the manubot project and its maintainers for eight years of resolver expertise embodied in <code>citekey_to_csl_item</code>, on which quartobot depends; the Quarto team at Posit for the Quarto Manuscripts project type that made this integration tractable; and early users of quartobot in the Bioconductor and CFDE communities whose feedback shaped the tool. <!-- TODO Sean — add specific named acknowledgments. --></p>
+</section>
+<section id="references" class="level1">
+
+<!-- Pandoc-citeproc inserts the bibliography here at render time, populated
+     from references.bib and references.json. Cite keys used in this draft
+     (and the ones to be filled in by Sean for §1, §4, §5) will be resolved
+     by `quartobot resolve` on the pre-render pass. -->
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-url:https://www.anthropic.com/engineering/code-execution-with-mcp" class="csl-entry" role="listitem">
+<span>“Code Execution with <span>MCP:</span> Building More Efficient <span>AI</span> Agents \ <span>Anthropic</span>.”</span> n.d. Accessed May 28, 2026. <a href="https://www.anthropic.com/engineering/code-execution-with-mcp">https://www.anthropic.com/engineering/code-execution-with-mcp</a>.
+</div>
+<div id="ref-url:https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark" class="csl-entry" role="listitem">
+<span>“MCP <span>Servers</span> <span>Use</span> 35x <span>More</span> <span>Tokens</span> <span>Than</span> <span>CLI</span> <span>Tools</span> — <span>And</span> <span>Reliability</span> <span>Drops</span> to 72% on <span>Hard</span> <span>Tasks</span>.”</span> 2026. May 9. <a href="https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/">https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/</a>.
+</div>
+<div id="ref-arxiv:2604.21816" class="csl-entry" role="listitem">
+Sadani, Anuj, and Deepak Kumar. 2026. <em>Tool <span>Attention</span> <span>Is</span> <span>All</span> <span>You</span> <span>Need:</span> <span>Dynamic</span> <span>Tool</span> <span>Gating</span> and <span>Lazy</span> <span>Schema</span> <span>Loading</span> for <span>Eliminating</span> the <span>MCP/Tools</span> <span>Tax</span> in <span>Scalable</span> <span>Agentic</span> <span>Workflows</span></em>. 2604.21816. arXiv. <a href="https://arxiv.org/abs/2604.21816">https://arxiv.org/abs/2604.21816</a>.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

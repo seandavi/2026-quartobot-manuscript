@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving
+and Interchange DTD v1.2 20190208//EN" "JATS-archivearticle1.dtd">
+
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+
+<front>
+
+
+<article-meta>
+
+
+<title-group>
+<article-title>quartobot: Quarto-native automation for citation
+resolution and reproducible publishing</article-title>
+</title-group>
+
+<contrib-group>
+<contrib contrib-type="author" corresp="yes">
+<contrib-id contrib-id-type="orcid">0000-0002-8991-6458</contrib-id>
+<name>
+<surname>Davis</surname>
+<given-names>Sean</given-names>
+</name>
+<string-name>Sean Davis</string-name>
+
+<email>seandavi@gmail.com</email>
+<role vocab="https://credit.niso.org" vocab-term="conceptualization" vocab-term-identifier="https://credit.niso.org/contributor-roles/conceptualization/">conceptualization</role>
+<role vocab="https://credit.niso.org" vocab-term="software" vocab-term-identifier="https://credit.niso.org/contributor-roles/software/">software</role>
+<role vocab="https://credit.niso.org" vocab-term="methodology" vocab-term-identifier="https://credit.niso.org/contributor-roles/methodology/">methodology</role>
+<role>writing — original draft</role>
+<xref ref-type="aff" rid="aff-1">a</xref>
+<xref ref-type="corresp" rid="cor-1">&#x002A;</xref>
+</contrib>
+</contrib-group>
+<aff id="aff-1">
+<institution content-type="dept">Department of Biomedical
+Informatics</institution>
+<institution-wrap>
+<institution>University of Colorado Anschutz School of
+Medicine</institution>
+</institution-wrap>
+
+
+
+
+
+
+
+</aff>
+<author-notes>
+<corresp id="cor-1">seandavi@gmail.com</corresp>
+</author-notes>
+
+
+
+
+
+
+
+
+
+<history></history>
+
+
+<abstract>
+<p>TODO — Sean’s section. ~250–300 words. Four moves: problem (manubot
+pattern, Quarto’s broader publishing surface, pandoc-manubot-cite covers
+citation resolution but not the broader pattern); approach (pre-render
+hook architecture, committed <monospace>references.json</monospace> as a
+durable artifact, CLI + MCP + on-disk surfaces); results (wraps
+<monospace>citekey_to_csl_item</monospace>, installable via
+<monospace>uv tool install</monospace>, validated on two production
+manuscripts); conclusion (extends manuscript-as- software along five
+dimensions while preserving manubot’s resolver expertise). Full bullets
+in outline.md.</p>
+</abstract>
+<kwd-group kwd-group-type="author">
+<kwd>Quarto</kwd>
+<kwd>manubot</kwd>
+<kwd>manuscript-as-software</kwd>
+<kwd>persistent identifiers</kwd>
+<kwd>citation resolution</kwd>
+<kwd>reproducible publishing</kwd>
+<kwd>scholarly communication</kwd>
+<kwd>CSL-JSON</kwd>
+<kwd>MCP</kwd>
+<kwd>pre-render hooks</kwd>
+</kwd-group>
+
+
+
+
+</article-meta>
+
+</front>
+
+<body>
+<sec id="introduction">
+  <title>Introduction</title>
+</sec>
+<sec id="implementation">
+  <title>Implementation</title>
+  <p>quartobot is structured as a single Python package exposing a small
+  command-line interface. The integration with Quarto runs through a
+  <monospace>project.pre-render:</monospace> hook in
+  <monospace>_quarto.yml</monospace>; the package is otherwise
+  independent of Quarto and can be invoked directly. Citation resolution
+  itself is delegated to manubot’s
+  <monospace>citekey_to_csl_item</monospace> function, so the resolver
+  chain (Crossref for DOI, NCBI E-utilities for PubMed and PMC, the
+  arXiv API, Open Library for ISBN, the Wikidata API for Wikidata items)
+  is the one already validated by eight years of manubot use.</p>
+  <sec id="architecture-and-the-choice-of-pre-render-over-filter">
+    <title>Architecture and the choice of pre-render over filter</title>
+    <p>Quarto’s documentation describes two principal customization
+    surfaces: pre-render scripts, which run before pandoc parses the
+    document, and Lua filters, which run on the parsed abstract syntax
+    tree after the document engine executes. Citation
+    <bold>formatting</bold> — how a resolved reference appears once
+    pandoc-citeproc has it in hand — is a natural Lua-filter concern,
+    and indeed pandoc-citeproc is itself implemented as a filter.
+    Citation <bold>resolution</bold>, in contrast, must happen before
+    the AST exists, because the bibliography is consumed at parse time.
+    A Lua filter is therefore unable to add entries to the bibliography;
+    by the time it runs, that file has already been read.</p>
+    <p>quartobot lives on the pre-render side for this reason. The
+    <monospace>resolve</monospace> subcommand scans Quarto sources
+    (<monospace>.qmd</monospace>, <monospace>.md</monospace>, and
+    <monospace>.ipynb</monospace>) for citation keys of the form
+    <monospace>@&lt;prefix&gt;:&lt;identifier&gt;</monospace>, resolves
+    each through <monospace>citekey_to_csl_item</monospace>, and writes
+    the resulting CSL-JSON to a file named
+    <monospace>references.json</monospace>. Pandoc-citeproc then
+    consumes that file as part of the normal render. The integration
+    touches three things in a project: a single line under
+    <monospace>project:</monospace> in
+    <monospace>_quarto.yml</monospace>, the generated
+    <monospace>references.json</monospace>, and optionally a
+    hand-curated <monospace>references.bib</monospace> for entries the
+    resolver does not cover (textbooks, gray literature, software
+    releases with no DOI).</p>
+    <p>This choice differs from the existing path via the
+    <monospace>pandoc-manubot-cite</monospace> filter, which provides
+    the same resolver behavior as a pandoc filter and therefore runs
+    during each pandoc invocation. The two approaches are not
+    equivalent. A filter resolves at render time and produces no durable
+    output. A pre-render hook resolves once, writes a file, commits it
+    to the repository, and lets every subsequent render consume the
+    cached bibliography without further network activity. For
+    manuscripts rendered repeatedly — by continuous integration, by
+    per-pull-request preview, by per-commit permalink — this difference
+    becomes material. The bibliography becomes a versioned artifact in
+    its own right.</p>
+    <p>The trade-off favors pre-render when several of the following
+    hold: the same manuscript is rendered repeatedly, authors want
+    offline-capable renders, the bibliography is treated as a versioned
+    artifact reviewed alongside the prose, and determinism matters more
+    than always-fresh metadata. These are precisely the conditions under
+    which the manuscript-as-software pattern operates. Pre-render is
+    therefore the structurally correct architectural choice for the
+    pattern; per-invocation filters remain a valid choice for one-off
+    pandoc renders where the manuscript is not under continuous
+    integration.</p>
+  </sec>
+  <sec id="supported-identifiers">
+    <title>Supported identifiers</title>
+    <p>Citation keys take the form
+    <monospace>@&lt;prefix&gt;:&lt;identifier&gt;</monospace> in prose.
+    The supported prefixes and their upstream resolvers are listed in
+    Table 1.</p>
+    <table-wrap>
+      <table>
+        <thead>
+          <tr>
+            <th>Prefix</th>
+            <th>Identifier type</th>
+            <th>Upstream resolver</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><monospace>@doi:</monospace></td>
+            <td>Digital Object Identifier</td>
+            <td>Crossref</td>
+          </tr>
+          <tr>
+            <td><monospace>@pmid:</monospace></td>
+            <td>PubMed identifier</td>
+            <td>NCBI E-utilities</td>
+          </tr>
+          <tr>
+            <td><monospace>@pmc:</monospace></td>
+            <td>PubMed Central identifier</td>
+            <td>NCBI E-utilities</td>
+          </tr>
+          <tr>
+            <td><monospace>@arxiv:</monospace></td>
+            <td>arXiv identifier</td>
+            <td>arXiv API</td>
+          </tr>
+          <tr>
+            <td><monospace>@isbn:</monospace></td>
+            <td>International Standard Book Number</td>
+            <td>Open Library</td>
+          </tr>
+          <tr>
+            <td><monospace>@wikidata:</monospace></td>
+            <td>Wikidata QID</td>
+            <td>Wikidata API</td>
+          </tr>
+          <tr>
+            <td><monospace>@url:</monospace></td>
+            <td>Web resource URL</td>
+            <td>URL metadata extraction</td>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+    <p>Hand-curated entries continue to be supported through a
+    project-level <monospace>references.bib</monospace>, which pandoc
+    reads alongside the resolver output. The choice of which mechanism
+    to use for a given citation is the author’s; the two coexist in the
+    same document. Reconciliation between the two sources is described
+    below.</p>
+  </sec>
+  <sec id="input-format-coverage">
+    <title>Input format coverage</title>
+    <p>The pre-render scan is format-agnostic on the input side. Jupyter
+    notebooks (<monospace>.ipynb</monospace>), Quarto Markdown
+    (<monospace>.qmd</monospace>), and plain Markdown
+    (<monospace>.md</monospace>) are all scanned in the same pass,
+    because Quarto presents these formats through a uniform interface.
+    This is the dimension manubot’s bespoke toolchain did not reach:
+    notebooks were never first-class manuscript inputs. The same
+    <monospace>@doi:</monospace> syntax that resolves in prose resolves
+    equally in a notebook narrative cell, allowing a
+    literate-programming manuscript (analysis code, narrative, and
+    citations in the same file) to use the manuscript-as-software
+    pattern without modification.</p>
+  </sec>
+  <sec id="cross-platform-deployment">
+    <title>Cross-platform deployment</title>
+    <p>quartobot inherits Quarto’s platform reach. The package runs on
+    macOS, Linux, and Windows; the GitHub Actions workflows that ship
+    with <monospace>quartobot use github-ci</monospace> (described
+    below) use standard cross-platform actions. Manubot’s bespoke
+    toolchain assumed a Linux+Docker rendering environment; quartobot
+    makes no such assumption.</p>
+  </sec>
+  <sec id="ci-scaffolding">
+    <title>CI scaffolding</title>
+    <p>The <monospace>use github-ci</monospace> subcommand lays down the
+    continuous-integration scaffolding for the manuscript-as-software
+    pattern. The default configuration produces three workflows. The
+    first builds the manuscript on every push to the default branch,
+    rendering to HTML, PDF, DOCX, and JATS XML, and publishes the result
+    to GitHub Pages. The second builds a per-pull-request preview at a
+    stable URL under <monospace>…/pr/&lt;n&gt;/</monospace>, posting a
+    sticky comment with the preview link for reviewers who do not have a
+    local Quarto installation. The third generates a versions index on
+    <monospace>gh-pages</monospace> listing tagged releases and open
+    pull-request previews.</p>
+    <p>With the optional
+    <monospace>--with-versioned-snapshots</monospace> flag, each commit
+    on the default branch also produces an immutable snapshot at
+    <monospace>…/v/&lt;sha&gt;/</monospace>. This is the manubot
+    per-commit permalink pattern, preserved exactly: a rendered
+    manuscript on disk always knows which commit produced it, and a
+    downloaded copy carries that provenance in the HTML.</p>
+  </sec>
+  <sec id="three-surfaces-for-human-and-ai-use">
+    <title>Three surfaces for human and AI use</title>
+    <p>quartobot exposes its resolution functionality through three
+    surfaces, each appropriate for a different consumer.</p>
+    <p>The <bold>CLI</bold> (<monospace>quartobot resolve</monospace>)
+    is the primary interface and the one Quarto invokes through the
+    pre-render hook. The same CLI is the surface AI authoring agents
+    shell out to when drafting. An agent that has just written
+    <monospace>@doi:10.1371/journal.pcbi.1007128</monospace> into prose
+    can pass that identifier, or a batch of several dozen, to a single
+    <monospace>quartobot resolve</monospace> call and receive the
+    resolved CSL-JSON back. Two checks become cheap. First, the agent
+    can confirm that every identifier resolved at all; an identifier
+    that does not resolve is one the agent likely fabricated, and the
+    citation can be removed or corrected before it reaches the
+    manuscript. Second, the agent can compare the resolved metadata to
+    what it intended (the work’s title, the lead author’s surname, the
+    year of publication) and catch the case where the identifier
+    resolves but does not name the paper the agent meant to cite. The
+    pattern matches the broader recommendation in recent work on
+    agent-tool efficiency to expose tools as code on a filesystem rather
+    than as in-context schemas
+    (<xref alt="“Code Execution with MCP: Building More Efficient AI Agents \ Anthropic,” n.d." rid="ref-urlU003AhttpsU003AU002FU002Fwww.anthropic.comU002FengineeringU002Fcode-execution-with-mcp" ref-type="bibr">“Code
+    Execution with MCP: Building More Efficient AI Agents \ Anthropic,”
+    n.d.</xref>).</p>
+    <p>The <bold>MCP server</bold>
+    (<monospace>quartobot mcp</monospace>) is an optional stdio-based
+    Model Context Protocol surface for the case where an IDE or agent
+    framework already operates inside an MCP-aware environment and
+    shelling out adds ergonomic friction. The server exposes the same
+    resolver function as the CLI; results are identical.</p>
+    <p>The <bold>on-disk artifact</bold>
+    (<monospace>references.json</monospace>) is the surface that
+    distinguishes quartobot most sharply from a filter-based approach.
+    Once <monospace>resolve</monospace> has written the file and an
+    author has committed it, the resolved citation graph is available to
+    any downstream consumer without further network activity and without
+    invoking pandoc. Citation linters can flag unused references,
+    duplicate identifiers, or missing required fields. Bibliometric
+    pipelines can ingest a manuscript’s reference set as structured
+    data. Other rendering toolchains can read the JSON directly. AI
+    authoring agents drafting later prose can ground new claims against
+    the manuscript’s existing reference set, reading the committed file
+    rather than re-querying the upstream APIs. This reuse is what
+    <monospace>pandoc-manubot-cite</monospace> cannot offer: filter
+    outputs are produced and consumed within a single pandoc invocation
+    and are not available to anything else.</p>
+    <p>A growing body of work documents the per-turn token cost of MCP
+    servers in agent workflows, with multi-server deployments routinely
+    consuming tens of thousands of tokens before useful work begins
+    (<xref alt="Sadani and Kumar 2026" rid="ref-arxivU003A2604.21816" ref-type="bibr">Sadani
+    and Kumar 2026</xref>;
+    <xref alt="“MCP Servers Use 35x More Tokens Than CLI Tools — And Reliability Drops to 72% on Hard Tasks” 2026" rid="ref-urlU003AhttpsU003AU002FU002Fwww.mindstudio.aiU002FblogU002Fmcp-servers-35x-more-tokens-cli-tools-reliability-benchmark" ref-type="bibr">“MCP
+    Servers Use 35x More Tokens Than CLI Tools — And Reliability Drops
+    to 72% on Hard Tasks” 2026</xref>). Anthropic’s analysis recommends
+    presenting tools as code on a filesystem and loading definitions on
+    demand, reporting up to a 98.7% reduction in context overhead under
+    that pattern
+    (<xref alt="“Code Execution with MCP: Building More Efficient AI Agents \ Anthropic,” n.d." rid="ref-urlU003AhttpsU003AU002FU002Fwww.anthropic.comU002FengineeringU002Fcode-execution-with-mcp" ref-type="bibr">“Code
+    Execution with MCP: Building More Efficient AI Agents \ Anthropic,”
+    n.d.</xref>). quartobot’s design predates this literature but lands
+    on the same architecture: the CLI is the default surface, the MCP
+    server is optional, and the on-disk artifact is the structurally
+    efficient locus for downstream reuse.</p>
+  </sec>
+  <sec id="reconciliation-of-resolved-and-hand-curated-entries">
+    <title>Reconciliation of resolved and hand-curated entries</title>
+    <p>Real manuscripts mix resolver-generated and hand-curated
+    citations. A <monospace>references.bib</monospace> may carry entries
+    for textbooks, software releases, gray literature, or any work
+    without a persistent identifier that the resolver covers. The
+    <monospace>references.json</monospace> produced by
+    <monospace>quartobot resolve</monospace> is regenerated on each
+    pre-render pass. Without explicit handling, the two sources can
+    collide on citation keys, especially as resolver-generated keys are
+    derived from the identifier itself (e.g.,
+    <monospace>doi:10.1371/journal.pcbi.1007128</monospace>) and may
+    overlap conceptually with hand-curated keys for the same work.</p>
+    <p>The <monospace>reconcile</monospace> subcommand handles this case
+    explicitly. Three modes are supported:
+    <monospace>prefer-bib</monospace> keeps the hand-curated entry and
+    discards the resolver’s version;
+    <monospace>prefer-resolved</monospace> keeps the resolver’s entry
+    and removes the hand-curated duplicate; and
+    <monospace>fail-on-collision</monospace> halts with a diagnostic
+    listing the conflicting keys for the author to resolve. All three
+    modes operate with backup-then-mutate semantics: the original files
+    are saved before any change, so a <monospace>reconcile</monospace>
+    step is reversible.</p>
+  </sec>
+</sec>
+<sec id="operation">
+  <title>Operation</title>
+  <sec id="installation">
+    <title>Installation</title>
+    <p>quartobot is distributed on PyPI and is installed as a standalone
+    command-line tool using <monospace>uv</monospace>:</p>
+    <code language="bash">uv tool install quartobot</code>
+    <p>The <monospace>uv tool install</monospace> form is recommended
+    over <monospace>pip install</monospace> because it isolates
+    quartobot in its own environment and places the resulting executable
+    on the user’s <monospace>PATH</monospace> without polluting any
+    project’s Python environment. quartobot requires Python 3.10 or
+    later; no other system dependencies are required beyond an installed
+    Quarto runtime.</p>
+  </sec>
+  <sec id="canonical-workflow">
+    <title>Canonical workflow</title>
+    <p>The shortest path from “I want to write a manuscript” to a
+    working manuscript-as-software project is three commands:</p>
+    <code language="bash">quarto create project manuscript my-paper
+cd my-paper
+quartobot init</code>
+    <p><monospace>quarto create</monospace> scaffolds a default Quarto
+    manuscript with an <monospace>index.qmd</monospace> source file, a
+    placeholder <monospace>references.bib</monospace>, and a
+    <monospace>_quarto.yml</monospace> project configuration.
+    <monospace>quartobot init</monospace> then layers the citation
+    pipeline on top: it adds the <monospace>pre-render:</monospace> line
+    to <monospace>_quarto.yml</monospace>, ensures
+    <monospace>references.json</monospace> is listed in the
+    <monospace>bibliography:</monospace> field, and appends the relevant
+    entries to <monospace>.gitignore</monospace> for any transient
+    files. The result is a Quarto project that resolves
+    <monospace>@doi:</monospace>, <monospace>@pmid:</monospace>, and
+    other persistent-identifier citation keys on every render.</p>
+    <p>Authors then write prose as they would in any Quarto project,
+    with citation keys pasted directly into the text:</p>
+    <code language="markdown">We follow @doi:10.1371/journal.pcbi.1007128, with the dataset described
+in @pmid:31479462 and methods inspired by @arxiv:2104.10729.</code>
+    <p>A <monospace>quarto render</monospace> runs the pre-render hook
+    automatically, produces an updated
+    <monospace>references.json</monospace>, and proceeds with the normal
+    multi-format render.</p>
+    <p>To add the continuous-integration scaffolding described above, a
+    single additional command is run from inside the project
+    directory:</p>
+    <code language="bash">quartobot use github-ci</code>
+    <p>The author commits the generated workflow files and pushes; the
+    first push to GitHub initiates the render, publishes the result to
+    GitHub Pages, and registers the pull-request preview pattern for
+    subsequent contributions.</p>
+  </sec>
+  <sec id="alternative-on-ramps">
+    <title>Alternative on-ramps</title>
+    <p>The canonical workflow assumes a new project. Two alternative
+    paths cover other starting points.</p>
+    <p>For an <bold>existing Quarto project</bold> that already has
+    prose and possibly a <monospace>references.bib</monospace>,
+    <monospace>quartobot init</monospace> is run from inside the project
+    root. It performs the same scaffolding steps and does not modify
+    existing prose or bibliography entries. Authors can then begin
+    adding <monospace>@doi:</monospace>-style keys incrementally without
+    rewriting any existing citations.</p>
+    <p>For the <bold>resolver-only case</bold> — an author who wants
+    citation resolution but has their own CI configuration and does not
+    want quartobot to scaffold workflows —
+    <monospace>quartobot init</monospace> provides everything needed
+    without <monospace>quartobot use github-ci</monospace>. The author
+    wires the resolver into any existing pipeline by ensuring
+    <monospace>quartobot resolve</monospace> runs before pandoc.</p>
+  </sec>
+  <sec id="command-line-reference">
+    <title>Command-line reference</title>
+    <p>The full CLI is summarized in Table 2. Each subcommand has
+    detailed help available via
+    <monospace>quartobot &lt;subcommand&gt; --help</monospace>.</p>
+    <table-wrap>
+      <table>
+        <colgroup>
+          <col width="50%" />
+          <col width="50%" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Subcommand</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><monospace>resolve</monospace></td>
+            <td>Scan project sources for citation keys, resolve each via
+            <monospace>citekey_to_csl_item</monospace>, write CSL-JSON
+            to <monospace>references.json</monospace>. Invoked by
+            Quarto’s pre-render hook; also directly callable.</td>
+          </tr>
+          <tr>
+            <td><monospace>init</monospace></td>
+            <td>Scaffold the citation pipeline into a Quarto project.
+            Idempotent.</td>
+          </tr>
+          <tr>
+            <td><monospace>use github-ci</monospace></td>
+            <td>Layer GitHub Actions workflows for render, pull-request
+            preview, and (optionally) per-commit permalinks.</td>
+          </tr>
+          <tr>
+            <td><monospace>scan</monospace></td>
+            <td>Inventory citation keys across a project without
+            resolving them. CI-lint surface.</td>
+          </tr>
+          <tr>
+            <td><monospace>validate</monospace></td>
+            <td>Static checks on <monospace>_quarto.yml</monospace> and
+            the project layout. CI-lint surface.</td>
+          </tr>
+          <tr>
+            <td><monospace>reconcile</monospace></td>
+            <td>Resolve collisions between
+            <monospace>references.bib</monospace> and
+            <monospace>references.json</monospace> with explicit modes
+            (<monospace>prefer-bib</monospace>,
+            <monospace>prefer-resolved</monospace>,
+            <monospace>fail-on-collision</monospace>).</td>
+          </tr>
+          <tr>
+            <td><monospace>versions</monospace></td>
+            <td>Generate the <monospace>/versions/</monospace> index
+            page on <monospace>gh-pages</monospace> listing tagged
+            releases and open pull-request previews.</td>
+          </tr>
+          <tr>
+            <td><monospace>mcp</monospace></td>
+            <td>Run a stdio Model Context Protocol server exposing the
+            resolver for in-band use by AI authoring agents.</td>
+          </tr>
+        </tbody>
+      </table>
+    </table-wrap>
+  </sec>
+</sec>
+<sec id="use-cases">
+  <title>Use cases</title>
+</sec>
+<sec id="discussion">
+  <title>Discussion</title>
+</sec>
+<sec id="software-availability">
+  <title>Software availability</title>
+  <list list-type="bullet">
+    <list-item>
+      <p><bold>Source repository:</bold>
+      <ext-link ext-link-type="uri" xlink:href="https://github.com/seandavi/quartobot">github.com/seandavi/quartobot</ext-link></p>
+    </list-item>
+    <list-item>
+      <p><bold>Package index:</bold>
+      <ext-link ext-link-type="uri" xlink:href="https://pypi.org/project/quartobot/"><monospace>quartobot</monospace>
+      on PyPI</ext-link></p>
+    </list-item>
+    <list-item>
+      <p><bold>Documentation:</bold>
+      <ext-link ext-link-type="uri" xlink:href="https://seandavi.github.io/quartobot/">seandavi.github.io/quartobot</ext-link></p>
+    </list-item>
+    <list-item>
+      <p><bold>License:</bold> MIT</p>
+    </list-item>
+    <list-item>
+      <p><bold>Archived release:</bold> Zenodo DOI to be minted at
+      submission. </p>
+    </list-item>
+    <list-item>
+      <p><bold>Latest version at submission:</bold> </p>
+    </list-item>
+  </list>
+</sec>
+<sec id="data-availability">
+  <title>Data availability</title>
+  <p>This article describes a software tool; no primary research data
+  are generated. The two production case studies referenced in the Use
+  Cases section have their own data availability statements in their
+  respective publications. The reproducibility artifacts for those case
+  studies — the source <monospace>.qmd</monospace> files, the committed
+  <monospace>references.json</monospace> bibliographies, the rendered
+  outputs, and the GitHub Actions workflow history — are publicly
+  available in the repositories cited under each case study. The present
+  manuscript is itself a quartobot project; its source, including the
+  committed <monospace>references.json</monospace> produced by
+  <monospace>quartobot resolve</monospace>, is available at .</p>
+</sec>
+<sec id="author-contributions">
+  <title>Author contributions</title>
+  <list list-type="bullet">
+    <list-item>
+      <p><bold>Sean Davis</bold> — Conceptualization, Methodology,
+      Software, Investigation, Writing — Original Draft, Writing —
+      Review &amp; Editing, Project Administration.</p>
+    </list-item>
+  </list>
+</sec>
+<sec id="ai-usage-statement">
+  <title>AI usage statement</title>
+  <p>Portions of this manuscript were drafted with the assistance of
+  large language model coding agents (Anthropic Claude, operating
+  through Claude Code) used as a literate-programming and drafting tool.
+  AI assistance was used during outlining, prior-work surveying,
+  structural drafting of the Implementation and Operation sections, and
+  the development of the Discussion. All scientific claims, design
+  decisions, citation choices, and final wording were reviewed and
+  edited by the human authors. quartobot itself was developed by the
+  human authors with AI assistance in implementation and
+  documentation.</p>
+</sec>
+<sec id="funding">
+  <title>Funding</title>
+  <p>This work was supported by the National Cancer Institute under the
+  NCI Information Technology for Cancer Research award U24CA289073 (NCI
+  Bioconductor) and the University of Colorado Cancer Center Support
+  Grant P30CA046934.</p>
+</sec>
+<sec id="acknowledgments">
+  <title>Acknowledgments</title>
+  <p>The authors thank the manubot project and its maintainers for eight
+  years of resolver expertise embodied in
+  <monospace>citekey_to_csl_item</monospace>, on which quartobot
+  depends; the Quarto team at Posit for the Quarto Manuscripts project
+  type that made this integration tractable; and early users of
+  quartobot in the Bioconductor and CFDE communities whose feedback
+  shaped the tool. </p>
+</sec>
+<sec id="references">
+  <title>References</title>
+</sec>
+</body>
+
+<back>
+<ref-list>
+  <title></title>
+  <ref id="ref-arxivU003A2604.21816">
+    <element-citation publication-type="report">
+      <person-group person-group-type="author">
+        <name><surname>Sadani</surname><given-names>Anuj</given-names></name>
+        <name><surname>Kumar</surname><given-names>Deepak</given-names></name>
+      </person-group>
+      <article-title>Tool Attention Is All You Need: Dynamic Tool Gating and Lazy Schema Loading for Eliminating the MCP/Tools Tax in Scalable Agentic Workflows</article-title>
+      <publisher-name>arXiv</publisher-name>
+      <year iso-8601-date="2026-04-24">2026</year><month>04</month><day>24</day>
+      <uri>https://arxiv.org/abs/2604.21816</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-urlU003AhttpsU003AU002FU002Fwww.anthropic.comU002FengineeringU002Fcode-execution-with-mcp">
+    <element-citation publication-type="webpage">
+      <article-title>Code execution with MCP: Building more efficient AI agents \ Anthropic</article-title>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-28">2026</year><month>05</month><day>28</day></date-in-citation>
+      <uri>https://www.anthropic.com/engineering/code-execution-with-mcp</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-urlU003AhttpsU003AU002FU002Fwww.mindstudio.aiU002FblogU002Fmcp-servers-35x-more-tokens-cli-tools-reliability-benchmark">
+    <element-citation publication-type="webpage">
+      <article-title>MCP Servers Use 35x More Tokens Than CLI Tools — And Reliability Drops to 72% on Hard Tasks</article-title>
+      <year iso-8601-date="2026-05-09">2026</year><month>05</month><day>09</day>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-28">2026</year><month>05</month><day>28</day></date-in-citation>
+      <uri>https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/</uri>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+
+
+
+</article>
