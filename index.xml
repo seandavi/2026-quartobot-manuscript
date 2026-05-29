@@ -612,7 +612,7 @@ in @pmid:31479462 and methods inspired by @arxiv:2104.10729.</code>
   <ref id="ref-urlU003AhttpsU003AU002FU002Fwww.anthropic.comU002FengineeringU002Fcode-execution-with-mcp">
     <element-citation publication-type="webpage">
       <article-title>Code execution with MCP: Building more efficient AI agents \ Anthropic</article-title>
-      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-28">2026</year><month>05</month><day>28</day></date-in-citation>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-29">2026</year><month>05</month><day>29</day></date-in-citation>
       <uri>https://www.anthropic.com/engineering/code-execution-with-mcp</uri>
     </element-citation>
   </ref>
@@ -620,7 +620,7 @@ in @pmid:31479462 and methods inspired by @arxiv:2104.10729.</code>
     <element-citation publication-type="webpage">
       <article-title>MCP Servers Use 35x More Tokens Than CLI Tools — And Reliability Drops to 72% on Hard Tasks</article-title>
       <year iso-8601-date="2026-05-09">2026</year><month>05</month><day>09</day>
-      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-28">2026</year><month>05</month><day>28</day></date-in-citation>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2026-05-29">2026</year><month>05</month><day>29</day></date-in-citation>
       <uri>https://www.mindstudio.ai/blog/mcp-servers-35x-more-tokens-cli-tools-reliability-benchmark/</uri>
     </element-citation>
   </ref>
